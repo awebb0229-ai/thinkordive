@@ -1,5 +1,5 @@
 import { eq } from "drizzle-orm";
-import { auth } from "@/lib/auth";
+import { auth } from "@/server/auth";
 import { user } from "./auth-schema";
 import { db } from "./init";
 import { cashAccount, marketSetting, stock, stockPriceHistory } from "./schema";

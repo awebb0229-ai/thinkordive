@@ -2,8 +2,8 @@ import { TanStackDevtools } from "@tanstack/react-devtools";
 import { createRootRoute, HeadContent, Scripts } from "@tanstack/react-router";
 import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools";
 import { NotFound } from "@/components/not-found";
-import { getSSRTheme } from "@/lib/ssr-theme";
 import { ThemeProvider } from "@/lib/theme-provider";
+import { getSSRTheme } from "@/server/functions/ssr-theme";
 import appCss from "../styles.css?url";
 
 export const Route = createRootRoute({

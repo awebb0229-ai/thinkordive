@@ -1,6 +1,6 @@
 import { useRouter } from "@tanstack/react-router";
 import { createContext, type PropsWithChildren, useContext } from "react";
-import { setSSRTheme, type Theme } from "./ssr-theme";
+import { setSSRTheme, type Theme } from "@/server/functions/ssr-theme";
 
 type ThemeProviderState = {
   theme: Theme;
