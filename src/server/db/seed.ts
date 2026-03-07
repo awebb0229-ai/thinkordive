@@ -5,22 +5,27 @@ import * as apiSchema from "@/server/db/schema";
 import { user } from "./auth-schema";
 import { db } from "./init";
 
+// Require name, email, role, and tmppass fields; other fields optional
+type BAUser = typeof user.$inferSelect;
+type TestUser = Pick<BAUser, "name" | "email" | "role"> &
+  Partial<Omit<BAUser, "name" | "email" | "role">> & {
+    tmppass: string;
+  };
+
 const TEST_USERS = [
   {
     name: "Test Customer",
     email: "customer@thinkordive.local",
-    password: "password123",
-    username: "testcustomer",
-    role: "customer" as const,
+    tmppass: "password123",
+    role: "customer",
   },
   {
     name: "Test Admin",
     email: "admin@thinkordive.local",
-    password: "password123",
-    username: "testadmin",
-    role: "admin" as const,
+    tmppass: "password123",
+    role: "admin",
   },
-] as const;
+] as const satisfies TestUser[];
 
 async function upsertUser(u: (typeof TEST_USERS)[number]): Promise<string> {
   const [existing] = await db
@@ -34,7 +39,7 @@ async function upsertUser(u: (typeof TEST_USERS)[number]): Promise<string> {
   }
 
   const res = await auth.api.signUpEmail({
-    body: { name: u.name, email: u.email, password: u.password },
+    body: { name: u.name, email: u.email, password: u.tmppass },
     headers: new Headers(),
   });
 
