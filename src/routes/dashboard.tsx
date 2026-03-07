@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
+import { StockPriceChart } from "@/components/stock-price-chart";
 import { Badge } from "@/components/ui/badge";
 import {
   Table,
@@ -56,6 +57,11 @@ function RouteComponent() {
   return (
     <div>
       <div>Hello "/dashboard"!</div>
+      {selected ? (
+        <StockPriceChart stockId={selected} />
+      ) : (
+        <p>Click on any row to view its price chart.</p>
+      )}
       <Table>
         <TableHeader>
           <TableRow>
