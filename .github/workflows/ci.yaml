@@ -1,4 +1,4 @@
-name: "CI"
+name: "CI Checks"
 
 on:
   pull_request:
@@ -22,12 +22,16 @@ jobs:
       run: nix flake check
 
   ci:
+    name: CI
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v5
     - uses: cachix/install-nix-action@v31
       with:
         github_access_token: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Install Dependencies
+      run: nix develop --command bun install --frozen-lockfile
 
     - name: TSC
       run: nix develop --command bun run check-types
