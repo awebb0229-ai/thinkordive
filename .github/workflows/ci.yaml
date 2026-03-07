@@ -1,0 +1,39 @@
+name: "CI"
+
+on:
+  pull_request:
+  push:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  nix-flake:
+    name: Nix Flake Check
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v5
+    - uses: cachix/install-nix-action@v31
+      with:
+        github_access_token: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Check flake
+      run: nix flake check
+
+  ci:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v5
+    - uses: cachix/install-nix-action@v31
+      with:
+        github_access_token: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: TSC
+      run: nix develop --command bun run check-types
+
+    - name: Biome
+      run: nix develop --command bun run check
+
+    - name: Build
+      run: nix develop --command bun run build
