@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as UnauthorizedRouteImport } from './routes/unauthorized'
 import { Route as SignupRouteImport } from './routes/signup'
+import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as HealthRouteImport } from './routes/health'
 import { Route as DebugRouteImport } from './routes/debug'
@@ -27,6 +28,11 @@ const UnauthorizedRoute = UnauthorizedRouteImport.update({
 const SignupRoute = SignupRouteImport.update({
   id: '/signup',
   path: '/signup',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SettingsRoute = SettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LoginRoute = LoginRouteImport.update({
@@ -71,6 +77,7 @@ export interface FileRoutesByFullPath {
   '/debug': typeof DebugRoute
   '/health': typeof HealthRoute
   '/login': typeof LoginRoute
+  '/settings': typeof SettingsRoute
   '/signup': typeof SignupRoute
   '/unauthorized': typeof UnauthorizedRoute
   '/admin/': typeof AdminIndexRoute
@@ -82,6 +89,7 @@ export interface FileRoutesByTo {
   '/debug': typeof DebugRoute
   '/health': typeof HealthRoute
   '/login': typeof LoginRoute
+  '/settings': typeof SettingsRoute
   '/signup': typeof SignupRoute
   '/unauthorized': typeof UnauthorizedRoute
   '/admin': typeof AdminIndexRoute
@@ -94,6 +102,7 @@ export interface FileRoutesById {
   '/debug': typeof DebugRoute
   '/health': typeof HealthRoute
   '/login': typeof LoginRoute
+  '/settings': typeof SettingsRoute
   '/signup': typeof SignupRoute
   '/unauthorized': typeof UnauthorizedRoute
   '/admin/': typeof AdminIndexRoute
@@ -107,6 +116,7 @@ export interface FileRouteTypes {
     | '/debug'
     | '/health'
     | '/login'
+    | '/settings'
     | '/signup'
     | '/unauthorized'
     | '/admin/'
@@ -118,6 +128,7 @@ export interface FileRouteTypes {
     | '/debug'
     | '/health'
     | '/login'
+    | '/settings'
     | '/signup'
     | '/unauthorized'
     | '/admin'
@@ -129,6 +140,7 @@ export interface FileRouteTypes {
     | '/debug'
     | '/health'
     | '/login'
+    | '/settings'
     | '/signup'
     | '/unauthorized'
     | '/admin/'
@@ -141,6 +153,7 @@ export interface RootRouteChildren {
   DebugRoute: typeof DebugRoute
   HealthRoute: typeof HealthRoute
   LoginRoute: typeof LoginRoute
+  SettingsRoute: typeof SettingsRoute
   SignupRoute: typeof SignupRoute
   UnauthorizedRoute: typeof UnauthorizedRoute
   AdminIndexRoute: typeof AdminIndexRoute
@@ -161,6 +174,13 @@ declare module '@tanstack/react-router' {
       path: '/signup'
       fullPath: '/signup'
       preLoaderRoute: typeof SignupRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/settings': {
+      id: '/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof SettingsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/login': {
@@ -221,6 +241,7 @@ const rootRouteChildren: RootRouteChildren = {
   DebugRoute: DebugRoute,
   HealthRoute: HealthRoute,
   LoginRoute: LoginRoute,
+  SettingsRoute: SettingsRoute,
   SignupRoute: SignupRoute,
   UnauthorizedRoute: UnauthorizedRoute,
   AdminIndexRoute: AdminIndexRoute,
