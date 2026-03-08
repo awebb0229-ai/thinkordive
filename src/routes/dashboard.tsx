@@ -1,7 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
+import { AppSidebar } from "@/components/app-sidebar";
 import { StockPriceChart } from "@/components/stock-price-chart";
 import { Badge } from "@/components/ui/badge";
+import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import {
   Table,
   TableBody,
@@ -55,70 +57,86 @@ function RouteComponent() {
   }
 
   return (
-    <div>
-      <div>Hello "/dashboard"!</div>
-      {selected ? (
-        <StockPriceChart stockId={selected} />
-      ) : (
-        <p>Click on any row to view its price chart.</p>
-      )}
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Symbol</TableHead>
-            <TableHead>Name</TableHead>
-            <TableHead>Sector</TableHead>
-            <TableHead className="text-right">Price</TableHead>
-            <TableHead className="text-right">Change</TableHead>
-            <TableHead className="text-right">Volume</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {stocks.map((s) => {
-            const up = parseFloat(s.change_pct ?? "0") >= 0;
-            const isSelected = s.id === selected;
-            return (
-              <TableRow
-                key={s.id}
-                onClick={() => setSelected(isSelected ? null : s.id)}
-                className={cn(
-                  "cursor-pointer transition-colors",
-                  isSelected && "bg-muted",
-                )}
-              >
-                <TableCell className="font-mono font-semibold">
-                  {s.symbol}
-                </TableCell>
-                <TableCell className="text-muted-foreground max-w-[160px] truncate">
-                  {s.name}
-                </TableCell>
-                <TableCell>
-                  {s.sector && (
-                    <Badge variant="secondary" className="text-xs font-normal">
-                      {s.sector}
-                    </Badge>
-                  )}
-                </TableCell>
-                <TableCell className="text-right font-medium">
-                  ${fmt(s.close)}
-                </TableCell>
-                <TableCell
-                  className={cn(
-                    "text-right font-medium tabular-nums",
-                    up ? "text-emerald-500" : "text-red-500",
-                  )}
-                >
-                  {up ? "+" : ""}
-                  {fmt(s.change_pct)}%
-                </TableCell>
-                <TableCell className="text-right text-muted-foreground">
-                  {fmtVol(s.volume)}
-                </TableCell>
+    <SidebarProvider
+      style={
+        {
+          "--sidebar-width": "calc(var(--spacing) * 72)",
+          "--header-height": "calc(var(--spacing) * 12)",
+        } as React.CSSProperties
+      }
+    >
+      <AppSidebar variant="inset" />
+      <SidebarInset>
+        <div className="flex flex-col space-y-4 p-4">
+          <div>Hello "/dashboard"!</div>
+          {selectedStock ? `${selectedStock.symbol}` : "Select a stock"}
+          {selected ? (
+            <StockPriceChart stockId={selected} />
+          ) : (
+            <p>Click on any row to view its price chart.</p>
+          )}
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Symbol</TableHead>
+                <TableHead>Name</TableHead>
+                <TableHead>Sector</TableHead>
+                <TableHead className="text-right">Price</TableHead>
+                <TableHead className="text-right">Change</TableHead>
+                <TableHead className="text-right">Volume</TableHead>
               </TableRow>
-            );
-          })}
-        </TableBody>
-      </Table>
-    </div>
+            </TableHeader>
+            <TableBody>
+              {stocks.map((s) => {
+                const up = parseFloat(s.change_pct ?? "0") >= 0;
+                const isSelected = s.id === selected;
+                return (
+                  <TableRow
+                    key={s.id}
+                    onClick={() => setSelected(isSelected ? null : s.id)}
+                    className={cn(
+                      "cursor-pointer transition-colors",
+                      isSelected && "bg-muted",
+                    )}
+                  >
+                    <TableCell className="font-mono font-semibold">
+                      {s.symbol}
+                    </TableCell>
+                    <TableCell className="text-muted-foreground max-w-[160px] truncate">
+                      {s.name}
+                    </TableCell>
+                    <TableCell>
+                      {s.sector && (
+                        <Badge
+                          variant="secondary"
+                          className="text-xs font-normal"
+                        >
+                          {s.sector}
+                        </Badge>
+                      )}
+                    </TableCell>
+                    <TableCell className="text-right font-medium">
+                      ${fmt(s.close)}
+                    </TableCell>
+                    <TableCell
+                      className={cn(
+                        "text-right font-medium tabular-nums",
+                        up ? "text-emerald-500" : "text-red-500",
+                      )}
+                    >
+                      {up ? "+" : ""}
+                      {fmt(s.change_pct)}%
+                    </TableCell>
+                    <TableCell className="text-right text-muted-foreground">
+                      {fmtVol(s.volume)}
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+          </Table>
+        </div>
+      </SidebarInset>
+    </SidebarProvider>
   );
 }
