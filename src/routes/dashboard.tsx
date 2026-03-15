@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { StockPriceChart } from "@/components/stock-price-chart";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -14,6 +14,16 @@ import { authClient } from "@/lib/auth-client";
 import { cn } from "@/lib/utils";
 import { authMiddleware } from "@/middleware/auth";
 import { getStocksWithLatestPrice } from "@/server/stocks";
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
 
 export const Route = createFileRoute("/dashboard")({
   component: RouteComponent,
@@ -41,11 +51,101 @@ const fmtVol = (v: number | null) => {
 function RouteComponent() {
   // Stock logic
   const stocks = Route.useLoaderData();
+  const [open, setOpen] = useState(false);
+  const [withdrawOpen, setWithdrawOpen] = useState(false);
   const [selected, setSelected] = useState<string | null>(null);
+  const [balance, setBalance] = useState(0);
+  const [isLoadingBalance, setIsLoadingBalance] = useState(true);
+  const depositInputRef = useRef<HTMLInputElement>(null);
+  const withdrawInputRef = useRef<HTMLInputElement>(null);
   const selectedStock = stocks.find((s) => s.id === selected);
 
   // Auth and session logic
   const { data: sessionData, isPending } = authClient.useSession();
+
+  // Load balance on mount
+  useEffect(() => {
+    if (!sessionData?.user?.id) return;
+    
+    const loadBalance = async () => {
+      try {
+        // First, try to load from localStorage for immediate UI update
+        const storedBalance = localStorage.getItem(`balance_${sessionData.user.id}`);
+        if (storedBalance) {
+          setBalance(parseFloat(storedBalance));
+        }
+        
+        // Then fetch from server to get authoritative balance
+        const response = await fetch(`/api/user/balance`);
+        if (response.ok) {
+          const data = await response.json();
+          const serverBalance = data.balance ?? 0;
+          setBalance(serverBalance);
+          localStorage.setItem(`balance_${sessionData.user.id}`, serverBalance.toString());
+        }
+      } catch (error) {
+        console.error("Failed to load balance:", error);
+      } finally {
+        setIsLoadingBalance(false);
+      }
+    };
+
+    loadBalance();
+  }, [sessionData?.user?.id]);
+
+  // Save balance when it changes
+  useEffect(() => {
+    if (!sessionData?.user?.id || isLoadingBalance) return;
+    
+    const saveBalance = async () => {
+      try {
+        // Save to localStorage immediately
+        localStorage.setItem(`balance_${sessionData.user.id}`, balance.toString());
+        
+        // Also save to server
+        await fetch(`/api/user/balance`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ balance }),
+        });
+      } catch (error) {
+        console.error("Failed to save balance:", error);
+      }
+    };
+
+    saveBalance();
+  }, [balance, sessionData?.user?.id, isLoadingBalance]);
+
+  const handleOpenChange = (newOpenState: boolean) => {
+    if (!newOpenState) {
+      console.log("Dialog is closing, updating variable...");
+    }
+    setOpen(newOpenState);
+  }
+
+  const handleDeposit = () => {
+    const amount = depositInputRef.current?.value;
+    if (amount && parseFloat(amount) > 0) {
+      setBalance(balance + parseFloat(amount));
+      if (depositInputRef.current) {
+        depositInputRef.current.value = "";
+      }
+      setOpen(false);
+    }
+  }
+
+  const handleWithdraw = () => {
+    const amount = withdrawInputRef.current?.value;
+    if (amount && parseFloat(amount) > 0 && parseFloat(amount) <= balance) {
+      setBalance(balance - parseFloat(amount));
+      if (withdrawInputRef.current) {
+        withdrawInputRef.current.value = "";
+      }
+      setWithdrawOpen(false);
+    }
+  }
+
+  // Auth and session logic
   if (isPending) {
     return <div className="p-8">Loading...</div>;
   }
@@ -55,7 +155,53 @@ function RouteComponent() {
   }
 
   return (
-    <div>
+    <div className="min-h-screen bg-black text-white px-4 py-8">
+
+      <h1 className = "text-4xl font-bold text-white text-center">
+        {sessionData?.user?.name ? `${sessionData.user.name}'s Profile` : "Profile"}
+      </h1>
+
+      <h2 className = "text-2xl font-semibold text-white text-center gap-4 mt-6">
+        Current balance: ${balance.toFixed(2)}
+      </h2>
+
+      <div className = "flex flex-col items-center gap-4 mt-6">
+
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogTrigger asChild>
+          <button className="px-10 py-2 bg-white text-black font-semibold rounded-lg hover:bg-gray-100">
+            Deposit Cash
+          </button>
+        </DialogTrigger>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>How much cash do you want to deposit?</DialogTitle>
+            <DialogDescription>
+              <Input id="deposit-cash" type="number" ref={depositInputRef}></Input>
+            </DialogDescription>
+          </DialogHeader>
+            <button onClick={handleDeposit} className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">Ok</button>
+        </DialogContent>
+      </Dialog>
+
+
+      <Dialog open={withdrawOpen} onOpenChange={setWithdrawOpen}>
+        <DialogTrigger asChild>
+          <button className="px-10 py-2 bg-white text-black font-semibold rounded-lg hover:bg-gray-100">
+            Withdraw Cash
+          </button>
+        </DialogTrigger>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>How much cash do you want to withdraw?</DialogTitle>
+            <DialogDescription>
+              <Input id="withdraw-cash" type="number" ref={withdrawInputRef}></Input>
+            </DialogDescription>
+          </DialogHeader>
+          <button onClick={handleWithdraw} className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">Ok</button>
+        </DialogContent>
+      </Dialog>
+    </div>
       <div>Hello "/dashboard"!</div>
       {selected ? (
         <StockPriceChart stockId={selected} />
