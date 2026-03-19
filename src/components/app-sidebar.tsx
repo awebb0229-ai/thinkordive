@@ -20,11 +20,6 @@ type NavItem = {
 };
 
 const data = {
-  user: {
-    name: "Admin",
-    email: "admin@thinkordive.local",
-    avatar: "/avatars/shadcn.jpg",
-  },
   navSecondary: [
     {
       title: "Settings",
@@ -38,7 +33,6 @@ const data = {
     },
   ],
 } as const satisfies {
-  user: { name: string; email: string; avatar: string };
   navSecondary: NavItem[];
 };
 
@@ -60,7 +54,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <NavSecondary items={data.navSecondary} className="mt-auto" />
       </SidebarContent>
       <SidebarFooter>
-        <NavUser user={data.user} />
+        <NavUser />
       </SidebarFooter>
     </Sidebar>
   );
