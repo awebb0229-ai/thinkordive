@@ -1,0 +1,21 @@
+"$schema" = "node_modules/wrangler/config-schema.json"
+name = "thinkordive"
+compatibility_date = "2026-03-17"
+compatibility_flags = ["nodejs_compat"]
+main = "@tanstack/react-start/server-entry"
+
+[observability]
+enabled = true
+
+[vars]
+BETTER_AUTH_URL = "https://thinkordive.doprz.dev"
+
+[[d1_databases]]
+binding = "thinkordive_db"
+database_name = "thinkordive-db"
+database_id = "768f8324-6e0d-4bcf-bff0-2cd7161b8d8a"
+migrations_dir = "drizzle"
+
+[[routes]]
+pattern = "thinkordive.doprz.dev"
+custom_domain = true
