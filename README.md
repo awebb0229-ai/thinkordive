@@ -88,6 +88,10 @@ src
     ```sh
     openssl rand -base64 32
     ```
+4. Run database migrations:
+    ```sh
+    bun run db:migrate:dev
+    ```
 
 ### Running the Application
 
