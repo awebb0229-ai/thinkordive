@@ -1,5 +1,4 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useRouter } from "@tanstack/react-router";
 import { useState } from "react";
 import { authClient } from "@/auth/auth-client";
 import { AppSidebar } from "@/components/app-sidebar";
@@ -19,7 +18,6 @@ import { authMiddleware } from "@/middleware/auth";
 import { getStocksWithLatestPrice } from "@/server/stocks";
 import { Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
-import { deleteStock } from "@/server/stocks";
 
 export const Route = createFileRoute("/dashboard")({
   component: RouteComponent,
