@@ -16,6 +16,8 @@ import {
 import { cn } from "@/lib/utils";
 import { authMiddleware } from "@/middleware/auth";
 import { getStocksWithLatestPrice } from "@/server/stocks";
+import { Link } from "@tanstack/react-router";
+import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/dashboard")({
   component: RouteComponent,
@@ -60,7 +62,12 @@ function RouteComponent() {
       <AppSidebar variant="inset" />
       <SidebarInset>
         <div className="flex flex-col space-y-4 p-4">
-          <div>Hello "/dashboard"!</div>
+          <div className="flex items-center justify-between">
+            <div>Hello "/dashboard"!</div>
+            <Button>
+              <Link to="/stocks/create">Add stock</Link>
+            </Button>
+          </div>
           {selectedStock ? `${selectedStock.symbol}` : "Select a stock"}
           {selected ? (
             <StockPriceChart stockId={selected} />

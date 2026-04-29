@@ -77,3 +77,49 @@ export const getStockPriceHistory = createServerFn()
       )
       .orderBy(stockPrices.timestamp);
   });
+
+export const createStock = createServerFn({ method: "POST" })
+  .inputValidator((input: {
+    ticker: string;
+    companyName: string;
+    exchange: string;
+    currency: string;
+    volume: number;
+    initialPrice: number;
+    sector: string;
+  }) => input)
+  .handler(async ({ data }) => {
+    const [stock] = await db
+      .insert(stocks)
+      .values({
+        id: data.ticker,
+        symbol: data.ticker,
+        name: data.companyName,
+      })
+      .returning();
+
+    await db.insert(stockPrices).values({
+      stockId: stock.id,
+      interval: "1d",
+      timestamp: new Date(),
+      open: data.initialPrice,
+      high: data.initialPrice,
+      low: data.initialPrice,
+      close: data.initialPrice,
+      volume: data.volume,
+    });
+
+    return stock;
+  });
+
+export const deleteStock = createServerFn({ method: "POST" })
+  .inputValidator((input: { ticker: string }) => input)
+  .handler(async ({ data }) => {
+    // 1. Delete associated price history first (foreign key constraint)
+    await db.delete(stockPrices).where(eq(stockPrices.stockId, data.ticker));
+    
+    // 2. Delete the stock itself
+    await db.delete(stocks).where(eq(stocks.id, data.ticker));
+    
+    return { success: true };
+  });
