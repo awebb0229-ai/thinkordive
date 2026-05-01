@@ -13,6 +13,8 @@ export const stocks = sqliteTable("stocks", {
   symbol: text("symbol").notNull(),
   name: text("name").notNull(),
   sector: text("sector"), // e.g. "Technology"
+  exchange: text('exchange').notNull(),
+  currency: text('currency').notNull(),
   industry: text("industry"), // e.g. "Consumer Electronics"
   logoUrl: text("logo_url"), // handy for dashboard cards
   description: text("description"),

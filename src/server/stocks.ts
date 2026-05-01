@@ -29,6 +29,8 @@ export const getStocksWithLatestPrice = createServerFn().handler(async () => {
       changePct: stockPrices.changePct,
       volume: stockPrices.volume,
       timestamp: stockPrices.timestamp,
+      exchange: stocks.exchange,
+      currency: stocks.currency,
     })
     .from(stocks)
     .leftJoin(latestPerStock, eq(latestPerStock.stockId, stocks.id))
@@ -96,7 +98,7 @@ const CreateStockSchema = z.object({
 });
 
 export const createStock = createServerFn({ method: "POST" })
-  .inputValidator((input) => CreateStockSchema.parse(input))
+  .inputValidator(CreateStockSchema)
   .handler(async ({ data }) => {
     const [stock] = await db
       .insert(stocks)
@@ -104,6 +106,9 @@ export const createStock = createServerFn({ method: "POST" })
         id: data.ticker,
         symbol: data.ticker,
         name: data.companyName,
+        exchange: data.exchange,
+        currency: data.currency,
+        sector: data.sector
       })
       .returning();
 
