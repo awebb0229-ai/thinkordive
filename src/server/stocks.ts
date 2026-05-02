@@ -6,31 +6,30 @@ import { db } from "./db/init";
 
 // NOTE: SQLite equivalent of LATERAL JOIN: subquery gets max timestamp per stock,
 // then we join stock_prices again on that exact timestamp to get the full row.
+
+
 export const getStocksWithLatestPrice = createServerFn().handler(async () => {
   const latestPerStock = db
-    .select({
-      stockId: stockPrices.stockId,
-      maxTs: sql<string>`MAX(${stockPrices.timestamp})`.as("max_ts"),
-    })
-    .from(stockPrices)
-    .where(eq(stockPrices.interval, "1d"))
-    .groupBy(stockPrices.stockId)
-    .as("latest_per_stock");
+  .select({
+    stockId: stockPrices.stockId,
+    maxTs: sql`MAX(${stockPrices.timestamp})`.as("max_ts")
+  })
+  .from(stockPrices)
+  .where(eq(stockPrices.interval, "1d"))
+  .groupBy(stockPrices.stockId)
+  .as("latest_per_stock");
 
   return db
-    .select({
+    .select({ 
       id: stocks.id,
       symbol: stocks.symbol,
       name: stocks.name,
-      sector: stocks.sector,
       industry: stocks.industry,
       close: stockPrices.close,
       change: stockPrices.change,
       changePct: stockPrices.changePct,
       volume: stockPrices.volume,
       timestamp: stockPrices.timestamp,
-      exchange: stocks.exchange,
-      currency: stocks.currency,
     })
     .from(stocks)
     .leftJoin(latestPerStock, eq(latestPerStock.stockId, stocks.id))
@@ -39,7 +38,7 @@ export const getStocksWithLatestPrice = createServerFn().handler(async () => {
       and(
         eq(stockPrices.stockId, stocks.id),
         eq(stockPrices.interval, "1d"),
-        eq(stockPrices.timestamp, latestPerStock.maxTs),
+        eq(stockPrices.timestamp, latestPerStock.maxTs)
       ),
     )
     .orderBy(stocks.symbol);
@@ -108,7 +107,7 @@ export const createStock = createServerFn({ method: "POST" })
         name: data.companyName,
         exchange: data.exchange,
         currency: data.currency,
-        sector: data.sector
+        sector: data.sector || null,
       })
       .returning();
 

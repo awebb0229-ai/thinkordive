@@ -1,6 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { toast } from "sonner";
+import { z } from "zod";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -24,7 +25,6 @@ export const Route = createFileRoute("/stocks/create")({
 });
 
 const EXCHANGES = [{ value: "NYSE", label: "NYSE", sub: "New York" }];
-
 const CURRENCIES = ["USD"];
 
 interface StockForm {
@@ -64,6 +64,28 @@ const defaultForm: StockForm = {
   sector: "",
 };
 
+// Mirror of the server schema — used for client-side validation
+const CreateStockSchema = z.object({
+  ticker: z
+    .string()
+    .min(1, "Ticker is required")
+    .max(5, "Ticker must be 5 characters or fewer")
+    .regex(/^[A-Z]+$/, "Ticker must be uppercase letters only"),
+  companyName: z.string().min(1, "Company name is required"),
+  volume: z.coerce
+    .number({ invalid_type_error: "Volume must be a number" })
+    .int("Volume must be a whole number")
+    .positive("Volume must be greater than 0"),
+  initialPrice: z.coerce
+    .number({ invalid_type_error: "Initial price must be a number" })
+    .positive("Initial price must be greater than 0"),
+  exchange: z.string().min(1, "Exchange is required"),
+  currency: z.string().min(1, "Currency is required"),
+  sector: z.string().optional(),
+});
+
+type FormErrors = Partial<Record<keyof StockForm, string>>;
+
 const fmtPrice = (n: string, currency: string) => {
   if (!n) return "—";
   const num = parseFloat(n);
@@ -77,12 +99,16 @@ const fmtPrice = (n: string, currency: string) => {
 function RouteComponent() {
   const navigate = useNavigate();
   const [form, setForm] = useState<StockForm>(defaultForm);
+  const [errors, setErrors] = useState<FormErrors>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const set =
     (key: keyof StockForm) =>
-    (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
+    (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
       setForm((prev) => ({ ...prev, [key]: e.target.value }));
+      // Clear the error for this field as the user types
+      if (errors[key]) setErrors((prev) => ({ ...prev, [key]: undefined }));
+    };
 
   const checks = {
     ticker: form.ticker.length > 0,
@@ -97,20 +123,32 @@ function RouteComponent() {
   const allDone = completedCount === Object.keys(checks).length;
 
   const handleSubmit = async () => {
-    if (!allDone) return;
+    // Run client-side Zod validation first
+    const result = CreateStockSchema.safeParse({
+      ticker: form.ticker,
+      companyName: form.companyName,
+      exchange: form.exchange,
+      currency: form.currency,
+      volume: form.volume,
+      initialPrice: form.initialPrice,
+      sector: form.sector,
+    });
+
+    if (!result.success) {
+      const fieldErrors: FormErrors = {};
+      for (const issue of result.error.issues) {
+        const field = issue.path[0] as keyof StockForm;
+        if (!fieldErrors[field]) fieldErrors[field] = issue.message;
+      }
+      setErrors(fieldErrors);
+      return;
+    }
+
+    setErrors({});
     setIsSubmitting(true);
+
     try {
-      await createStock({
-        data: {
-          ticker: form.ticker,
-          companyName: form.companyName,
-          exchange: form.exchange,
-          currency: form.currency,
-          volume: parseInt(form.volume, 10),
-          initialPrice: parseFloat(form.initialPrice),
-          sector: form.sector,
-        },
-      });
+      await createStock({ data: result.data });
       toast.success("Stock listed successfully");
       navigate({ to: "/dashboard" });
     } catch (err) {
@@ -123,14 +161,12 @@ function RouteComponent() {
 
   return (
     <div className="flex flex-col gap-6 p-6 max-w-5xl mx-auto w-full">
-      {/* Breadcrumb */}
       <p className="text-sm text-muted-foreground">
         Instruments &rsaquo;{" "}
         <span className="text-foreground">New listing</span>
       </p>
 
       <div className="grid grid-cols-[1fr_300px] gap-5 items-start">
-        {/* ── Main form ── */}
         <div className="rounded-xl border bg-card p-6 flex flex-col gap-6">
           <div className="border-b pb-5">
             <h1 className="text-2xl font-light tracking-tight">
@@ -141,23 +177,30 @@ function RouteComponent() {
             </p>
           </div>
 
-          {/* Identity */}
           <div className="grid grid-cols-2 gap-4">
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="ticker">Ticker symbol</Label>
               <Input
                 id="ticker"
                 value={form.ticker}
-                onChange={(e) =>
+                onChange={(e) => {
                   setForm((p) => ({
                     ...p,
                     ticker: e.target.value.toUpperCase(),
-                  }))
-                }
+                  }));
+                  if (errors.ticker)
+                    setErrors((p) => ({ ...p, ticker: undefined }));
+                }}
                 placeholder="e.g. AAPL"
                 maxLength={5}
-                className="font-mono font-semibold tracking-widest uppercase"
+                className={cn(
+                  "font-mono font-semibold tracking-widest uppercase",
+                  errors.ticker && "border-destructive focus-visible:ring-destructive",
+                )}
               />
+              {errors.ticker && (
+                <p className="text-xs text-destructive">{errors.ticker}</p>
+              )}
             </div>
 
             <div className="flex flex-col gap-1.5">
@@ -167,7 +210,13 @@ function RouteComponent() {
                 value={form.companyName}
                 onChange={set("companyName")}
                 placeholder="e.g. Apple Inc."
+                className={cn(
+                  errors.companyName && "border-destructive focus-visible:ring-destructive",
+                )}
               />
+              {errors.companyName && (
+                <p className="text-xs text-destructive">{errors.companyName}</p>
+              )}
             </div>
 
             <div className="flex flex-col gap-1.5">
@@ -179,7 +228,13 @@ function RouteComponent() {
                 onChange={set("volume")}
                 placeholder="e.g. 1000000"
                 min="0"
+                className={cn(
+                  errors.volume && "border-destructive focus-visible:ring-destructive",
+                )}
               />
+              {errors.volume && (
+                <p className="text-xs text-destructive">{errors.volume}</p>
+              )}
             </div>
 
             <div className="flex flex-col gap-1.5">
@@ -192,11 +247,16 @@ function RouteComponent() {
                 placeholder="0.00"
                 step="0.01"
                 min="0"
+                className={cn(
+                  errors.initialPrice && "border-destructive focus-visible:ring-destructive",
+                )}
               />
+              {errors.initialPrice && (
+                <p className="text-xs text-destructive">{errors.initialPrice}</p>
+              )}
             </div>
           </div>
 
-          {/* Exchange */}
           <div className="border-t pt-5 flex flex-col gap-3">
             <p className="text-xs font-medium tracking-widest uppercase text-muted-foreground">
               Exchange
@@ -239,7 +299,6 @@ function RouteComponent() {
             </div>
           </div>
 
-          {/* Currency */}
           <div className="border-t pt-5 flex flex-col gap-3">
             <p className="text-xs font-medium tracking-widest uppercase text-muted-foreground">
               Currency
@@ -263,7 +322,6 @@ function RouteComponent() {
             </Select>
           </div>
 
-          {/* Actions */}
           <div className="border-t pt-5 flex gap-2">
             <Button
               variant="outline"
@@ -273,17 +331,17 @@ function RouteComponent() {
             </Button>
             <Button
               className="flex-1 bg-slate-700 hover:bg-slate-800 text-white"
-              disabled={!allDone || isSubmitting}
+              disabled={isSubmitting}
               onClick={handleSubmit}
+              suppressHydrationWarning
             >
               {isSubmitting ? "Listing…" : "List stock →"}
             </Button>
           </div>
         </div>
 
-        {/* Preview sidebar */}
+        {/* Preview sidebar — unchanged */}
         <div className="flex flex-col gap-4 sticky top-6">
-          {/* Live preview */}
           <div className="rounded-xl border bg-card p-4 flex flex-col gap-0">
             <p className="text-xs font-medium tracking-widest uppercase text-muted-foreground mb-3">
               Live preview
@@ -321,7 +379,6 @@ function RouteComponent() {
             </div>
           </div>
 
-          {/* Checklist */}
           <div className="rounded-xl border bg-card p-4">
             <p className="text-xs font-medium tracking-widest uppercase text-muted-foreground mb-3">
               Checklist ({completedCount}/{Object.keys(checks).length})
