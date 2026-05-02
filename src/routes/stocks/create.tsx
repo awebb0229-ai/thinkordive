@@ -64,7 +64,6 @@ const defaultForm: StockForm = {
   sector: "",
 };
 
-// Mirror of the server schema — used for client-side validation
 const CreateStockSchema = z.object({
   ticker: z
     .string()
@@ -73,11 +72,11 @@ const CreateStockSchema = z.object({
     .regex(/^[A-Z]+$/, "Ticker must be uppercase letters only"),
   companyName: z.string().min(1, "Company name is required"),
   volume: z.coerce
-    .number({ invalid_type_error: "Volume must be a number" })
+    .number({ error: "Volume must be a number" })
     .int("Volume must be a whole number")
     .positive("Volume must be greater than 0"),
   initialPrice: z.coerce
-    .number({ invalid_type_error: "Initial price must be a number" })
+    .number({ error: "Initial price must be a number" })
     .positive("Initial price must be greater than 0"),
   exchange: z.string().min(1, "Exchange is required"),
   currency: z.string().min(1, "Currency is required"),
@@ -195,7 +194,8 @@ function RouteComponent() {
                 maxLength={5}
                 className={cn(
                   "font-mono font-semibold tracking-widest uppercase",
-                  errors.ticker && "border-destructive focus-visible:ring-destructive",
+                  errors.ticker &&
+                    "border-destructive focus-visible:ring-destructive",
                 )}
               />
               {errors.ticker && (
@@ -211,7 +211,8 @@ function RouteComponent() {
                 onChange={set("companyName")}
                 placeholder="e.g. Apple Inc."
                 className={cn(
-                  errors.companyName && "border-destructive focus-visible:ring-destructive",
+                  errors.companyName &&
+                    "border-destructive focus-visible:ring-destructive",
                 )}
               />
               {errors.companyName && (
@@ -229,7 +230,8 @@ function RouteComponent() {
                 placeholder="e.g. 1000000"
                 min="0"
                 className={cn(
-                  errors.volume && "border-destructive focus-visible:ring-destructive",
+                  errors.volume &&
+                    "border-destructive focus-visible:ring-destructive",
                 )}
               />
               {errors.volume && (
@@ -248,11 +250,14 @@ function RouteComponent() {
                 step="0.01"
                 min="0"
                 className={cn(
-                  errors.initialPrice && "border-destructive focus-visible:ring-destructive",
+                  errors.initialPrice &&
+                    "border-destructive focus-visible:ring-destructive",
                 )}
               />
               {errors.initialPrice && (
-                <p className="text-xs text-destructive">{errors.initialPrice}</p>
+                <p className="text-xs text-destructive">
+                  {errors.initialPrice}
+                </p>
               )}
             </div>
           </div>
@@ -333,14 +338,12 @@ function RouteComponent() {
               className="flex-1 bg-slate-700 hover:bg-slate-800 text-white"
               disabled={isSubmitting}
               onClick={handleSubmit}
-              suppressHydrationWarning
             >
               {isSubmitting ? "Listing…" : "List stock →"}
             </Button>
           </div>
         </div>
 
-        {/* Preview sidebar — unchanged */}
         <div className="flex flex-col gap-4 sticky top-6">
           <div className="rounded-xl border bg-card p-4 flex flex-col gap-0">
             <p className="text-xs font-medium tracking-widest uppercase text-muted-foreground mb-3">
