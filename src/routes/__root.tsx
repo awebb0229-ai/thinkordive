@@ -6,6 +6,8 @@ import { NotFound } from "@/components/not-found";
 import { ThemeProvider } from "@/lib/theme-provider";
 import { getSSRTheme } from "@/server/functions/ssr-theme";
 import appCss from "../styles.css?url";
+import { Toaster } from "sonner"
+import { CookieConsent } from "@/components/CookieConsent";
 
 const queryClient = new QueryClient();
 
@@ -46,7 +48,12 @@ function RootDocument({ children }: { children: React.ReactNode }) {
       </head>
       <body>
         <QueryClientProvider client={queryClient}>
-          <ThemeProvider theme={theme}>{children}</ThemeProvider>
+          <ThemeProvider theme={theme}>
+            <Toaster position="bottom-center" />
+            {children}
+            <CookieConsent />
+
+          </ThemeProvider>
         </QueryClientProvider>
         <TanStackDevtools
           config={{
